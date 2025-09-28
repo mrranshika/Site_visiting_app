@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteVisit {
+  id                  String   @id @default(cuid())
+  customerId          String
+  customerName        String
+  dateReceived        DateTime
+  dayOfWeek           String
+  phoneNumber         String
+  hasWhatsApp         Boolean
+  hasWhatsAppNumber   Boolean?
+  whatsappNumber      String?
+  district            String
+  city                String
+  address             String?
+  latitude            Float?
+  longitude           Float?
+  hasRemovals         Boolean
+  removalCharge       Float?
+  hasAdditionalLabour Boolean
+  additionalLabourCharge Float?
+  serviceType         String // Roof, Ceiling, Gutters
+  status              String // Pending, Running, Complete, Cancel
+  quotationNumber     String?
+  quotationAttachment String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  siteImages         SiteImage[]
+  siteDrawings       SiteDrawing[]
+  siteVideos         SiteVideo[]
+  ceilingDetails     CeilingDetails?
+  gutterDetails      GutterDetails?
+  roofDetails        RoofDetails?
+}
+
+model SiteImage {
+  id         String   @id @default(cuid())
+  siteVisitId String
+  filename   String
+  filePath   String
+  createdAt  DateTime @default(now())
+  
+  siteVisit SiteVisit @relation(fields: [siteVisitId], references: [id], onDelete: Cascade)
+}
+
+model SiteDrawing {
+  id         String   @id @default(cuid())
+  siteVisitId String
+  filename   String
+  filePath   String
+  createdAt  DateTime @default(now())
+  
+  siteVisit SiteVisit @relation(fields: [siteVisitId], references: [id], onDelete: Cascade)
+}
+
+model SiteVideo {
+  id         String   @id @default(cuid())
+  siteVisitId String
+  filename   String
+  filePath   String
+  duration   Int      // in seconds
+  createdAt  DateTime @default(now())
+  
+  siteVisit SiteVisit @relation(fields: [siteVisitId], references: [id], onDelete: Cascade)
+}
+
+model CeilingDetails {
+  id                 String   @id @default(cuid())
+  siteVisitId        String   @unique
+  ceilingType        String   // "2x2 Eltoro", "2x2 PVC", "Panel Flat", "Panel Box"
+  hasMacfoil         Boolean?
+  pricePerSquareFeet Float
+  totalArea          Float
+  totalPrice         Float
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  siteVisit  SiteVisit        @relation(fields: [siteVisitId], references: [id], onDelete: Cascade)
+  areas      CeilingArea[]
+}
+
+model CeilingArea {
+  id              String   @id @default(cuid())
+  ceilingDetailsId String
+  length          Float    // in feet
+  width           Float    // in feet
+  area            Float    // calculated area
+  createdAt       DateTime @default(now())
+  
+  ceilingDetails CeilingDetails @relation(fields: [ceilingDetailsId], references: [id], onDelete: Cascade)
+}
+
+model GutterDetails {
+  id                  String   @id @default(cuid())
+  siteVisitId         String   @unique
+  guttersValanceB     String   // stored as "5' + 6' + 3' = 14'"
+  bFlashingValanceB   String
+  gutters             String
+  valanceB            String
+  bFlashing           String
+  dPipes              String
+  nozzels             Int?
+  endCaps             Int?
+  chainPackets        Int?
+  wallFSize           String?  // "9" or "12"
+  wallF               String?
+  blindWallFlashingSize String? // "9" or "12"
+  blindWallFlashing   String?
+  ridgeCover          String?
+  ratGuard            String?
+  customDesignNote    String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  siteVisit SiteVisit @relation(fields: [siteVisitId], references: [id], onDelete: Cascade)
+}
+
+model RoofDetails {
+  id               String   @id @default(cuid())
+  siteVisitId      String   @unique
+  roofType         String   // "New Roof" or "Repair Roof"
+  structureType    String?  // "Wood Roof" or "Steel Roof"
+  finishType       String?  // "Normal Roof" or "Finishing Roof"
+  materialType     String?  // "Asbestos", "Tile", "Amano", "UPVC", etc.
+  color            String?  // for colored materials
+  subType          String?  // for specific sub-types like "Full Curve Roof"
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  siteVisit SiteVisit @relation(fields: [siteVisitId], references: [id], onDelete: Cascade)
+}
