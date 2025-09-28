@@ -4,6 +4,14 @@ import { GoogleSheetsService, GoogleSheetData } from '@/lib/google-sheets'
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if database is available
+    if (!db) {
+      return NextResponse.json(
+        { error: 'Database not available during build time' },
+        { status: 503 }
+      )
+    }
+
     const formData = await request.formData()
     const data = JSON.parse(formData.get('data') as string)
     const files = formData.getAll('files') as File[]
@@ -150,6 +158,11 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    // Check if we're in build mode or if db is not available
+    if (process.env.NEXT_PHASE?.includes('build') || !db) {
+      return NextResponse.json([])
+    }
+
     const siteVisits = await db.siteVisit.findMany({
       include: {
         ceilingDetails: {
@@ -171,6 +184,10 @@ export async function GET() {
     return NextResponse.json(siteVisits)
   } catch (error) {
     console.error('Error fetching site visits:', error)
+    // During build time or if db is not available, return empty array instead of error
+    if (process.env.NEXT_PHASE?.includes('build') || !db) {
+      return NextResponse.json([])
+    }
     return NextResponse.json(
       { error: 'Failed to fetch site visits' },
       { status: 500 }
